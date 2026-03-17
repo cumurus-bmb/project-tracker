@@ -1,0 +1,9 @@
+# PHP 8.2 の FPM (FastCGI Process Manager) 版を使用
+FROM php:8.2-fpm-alpine
+
+# Linux環境のパッケージマネージャ(apk)で必要なライブラリをインストール
+RUN apk add --no-cache icu-dev libzip-dev oniguruma-dev \
+    && docker-php-ext-install intl pdo pdo_mysql zip
+
+# Composer を公式イメージからコピー
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

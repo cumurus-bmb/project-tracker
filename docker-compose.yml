@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=project-tracker_db
+      - DB_USERNAME=user
+      - DB_PASSWORD=pass
+    depends_on:
+      - db
+    # Laravelインストール待ちの間、コンテナが死なないように待機させる
+    # command: tail -f /dev/null
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=project-tracker_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass
+      - MYSQL_ROOT_PASSWORD=root_pass
+    volumes:
+      - db-data:/var/lib/mysql
+
+  node:
+    image: node:20-alpine
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    command: tail -f /dev/null
+
+volumes:
+  db-data:
+
