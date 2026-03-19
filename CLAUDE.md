@@ -34,7 +34,7 @@ npm run build                  # public/build を生成してサーバーへア�
 | レイヤー | 技術 |
 |----------|------|
 | バックエンド | Laravel 12 / PHP 8.3 |
-| フロントエンド | React 18 + JavaScript + Inertia.js v2 |
+| フロントエンド | React 18 + TypeScript + Inertia.js v2 |
 | UI | Tailwind CSS v3 + shadcn/ui |
 | DB | MySQL 8.0 |
 | 認証 | Laravel Breeze（Inertia + React） |
@@ -47,7 +47,7 @@ npm run build                  # public/build を生成してサーバーへア�
 | MCP | 用途 |
 |-----|------|
 | **Laravel Boost 2.0** | DBスキーマ・ルート・Eloquent・Artisanコマンド・Laravelドキュメント |
-| **Context7** | React / Inertia.js / JavaScript / Stripe の最新ドキュメント |
+| **Context7** | React / Inertia.js / TypeScript / Stripe の最新ドキュメント |
 | **shadcn/ui MCP** | UIコンポーネント情報 |
 | **Stripe MCP** | Stripe API・Webhook・決済フローのドキュメント |
 | **GitHub MCP** | Gitオペレーション・デプロイ連携 |
@@ -70,7 +70,7 @@ Inertia v2のuseFormを使ってフォームを実装して。use context7
 | ファイル | 内容 |
 |----------|------|
 | `.claude/rules/laravel.md` | Laravel規約・コントローラー・認証・セキュリティ |
-| `.claude/rules/react-inertia.md` | React・Inertia・JavaScript・shadcn/ui |
+| `.claude/rules/react-inertia.md` | React・Inertia・TypeScript・shadcn/ui |
 | `.claude/rules/database.md` | MySQL・Eloquent・マイグレーション規約 |
 | `.claude/rules/stripe.md` | Stripe決済統合・Webhook処理 |
 | `.claude/rules/deployment.md` | Docker開発環境・ConoHa Wingsデプロイ |
