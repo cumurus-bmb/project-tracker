@@ -33,7 +33,8 @@ services:
       - .:/var/www/html
     working_dir: /var/www/html
     command: tail -f /dev/null
-
+    ports:
+      - "5173:5173"
 volumes:
   db-data:
 

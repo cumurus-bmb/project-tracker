@@ -10,4 +10,11 @@ export default defineConfig({
         }),
         react(),
     ],
+    server: {
+        host: '0.0.0.0',   // コンテナ外からのアクセスを許可
+        port: 5173,
+        hmr: {
+            host: 'localhost', // ブラウザ側がHMRに接続するホスト
+        },
+    },
 });

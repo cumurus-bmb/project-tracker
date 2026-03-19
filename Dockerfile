@@ -1,5 +1,5 @@
-# PHP 8.2 の FPM (FastCGI Process Manager) 版を使用
-FROM php:8.2-fpm-alpine
+# PHP 8.3 の FPM (FastCGI Process Manager) 版を使用
+FROM php:8.3-fpm-alpine
 
 # Linux環境のパッケージマネージャ(apk)で必要なライブラリをインストール
 RUN apk add --no-cache icu-dev libzip-dev oniguruma-dev \
