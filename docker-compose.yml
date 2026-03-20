@@ -26,6 +26,8 @@ services:
       - MYSQL_ROOT_PASSWORD=root_pass
     volumes:
       - db-data:/var/lib/mysql
+    ports:
+      - "3306:3306"   # 
 
   node:
     image: node:20-alpine

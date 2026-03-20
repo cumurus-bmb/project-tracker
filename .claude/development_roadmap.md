@@ -23,21 +23,21 @@
   - [x] Inertia 共有 Props の型拡張（auth, flash, subscription）
 
 ### 1.2 データベース設計とマイグレーション
-- [ ] データベーススキーマの設計
-  - [ ] `users` テーブル拡張（timezone, week_start カラム追加）
-  - [ ] `categories` テーブル（カテゴリ管理）
-  - [ ] `work_logs` テーブル（作業時間記録）
-- [ ] マイグレーションファイルの作成
+- [x] データベーススキーマの設計
+  - [x] `users` テーブル拡張（timezone, week_start カラム追加）
+  - [x] `categories` テーブル（カテゴリ管理）
+  - [x] `work_logs` テーブル（作業時間記録）
+- [x] マイグレーションファイルの作成
   ```bash
   docker compose exec app php artisan make:migration add_settings_to_users_table
   docker compose exec app php artisan make:migration create_categories_table
   docker compose exec app php artisan make:migration create_work_logs_table
   ```
-- [ ] マイグレーション実行
+- [x] マイグレーション実行
   ```bash
   docker compose exec app php artisan migrate
   ```
-- [ ] Eloquent モデルの作成（`$fillable`, リレーション, スコープ定義）
+- [x] Eloquent モデルの作成（`$fillable`, リレーション, スコープ定義）
   ```bash
   docker compose exec app php artisan make:model Category -mrc
   docker compose exec app php artisan make:model WorkLog -mrc
