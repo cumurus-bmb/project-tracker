@@ -14,13 +14,13 @@
 ## フェーズ1: 基盤構築
 
 ### 1.1 プロジェクト基本設定
-- [ ] Tailwind CSS のデザインシステム適用
-  - [ ] `resources/css/app.css` の CSS 変数・スタイル設定
-  - [ ] カラーシステムの実装（`design_system.md` 参照）
-  - [ ] shadcn/ui のインストールと初期設定
-- [ ] TypeScript の型定義ファイル作成
-  - [ ] `resources/js/types/index.d.ts`（User, Category, WorkLog, PaginationLink 等）
-  - [ ] Inertia 共有 Props の型拡張（auth, flash, subscription）
+- [x] Tailwind CSS のデザインシステム適用
+  - [x] `resources/css/app.css` の CSS 変数・スタイル設定
+  - [x] カラーシステムの実装（`design_system.md` 参照）
+  - [x] shadcn/ui のインストールと初期設定
+- [x] TypeScript の型定義ファイル作成
+  - [x] `resources/js/types/index.d.ts`（User, Category, WorkLog, PaginationLink 等）
+  - [x] Inertia 共有 Props の型拡張（auth, flash, subscription）
 
 ### 1.2 データベース設計とマイグレーション
 - [ ] データベーススキーマの設計
