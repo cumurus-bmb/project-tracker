@@ -5,11 +5,11 @@
 基盤やコア機能から作成し、ユーザーが画面上で動作確認しながら開発を進められるように構成されています。
 
 ## 前提条件
-- [ ] Docker 環境構築済み（app / db / node の3サービス起動確認）
-- [ ] Laravel 12 + React 18 + Inertia.js v2 + Tailwind CSS v3 インストール済み
-- [ ] Laravel Breeze（Inertia + React）インストール済み
-- [ ] `.env` の DB 接続設定済み（DB_HOST=db）
-- [ ] 要件定義書（`.claude/requirements.md`）確認済み
+- [x] Docker 環境構築済み（app / db / node の3サービス起動確認）
+- [x] Laravel 12 + React 18 + Inertia.js v2 + Tailwind CSS v3 インストール済み
+- [x] Laravel Breeze（Inertia + React）インストール済み
+- [x] `.env` の DB 接続設定済み（DB_HOST=db）
+- [x] 要件定義書（`.claude/requirements.md`）確認済み
 
 ## フェーズ1: 基盤構築
 
@@ -149,21 +149,22 @@
 ## フェーズ5: プレミアム機能の実装
 
 ### 5.1 Stripe + Laravel Cashier のセットアップ
-- [ ] Laravel Cashier のインストール
+- [x] Laravel Cashier のインストール
   ```bash
   docker compose exec app composer require laravel/cashier
   docker compose exec app php artisan vendor:publish --tag="cashier-migrations"
   docker compose exec app php artisan migrate
   ```
-- [ ] `User` モデルに `Billable` トレイトを追加
-- [ ] `.env` に Stripe キーを設定
+- [x] `User` モデルに `Billable` トレイトを追加
+- [x] `.env` に Stripe キーを設定
   ```
   STRIPE_KEY=pk_test_xxx
   STRIPE_SECRET=sk_test_xxx
   STRIPE_WEBHOOK_SECRET=whsec_xxx
+  STRIPE_PRICE_MONTHLY=price_1TCgAOGhzxAsAPQYdB7Fnyhl
   CASHIER_CURRENCY=jpy
   ```
-- [ ] **【手動作業】** Stripe ダッシュボードでサブスクリプションプランを作成し、Price ID を取得
+- [x] **【手動作業】** Stripe ダッシュボードでサブスクリプションプランを作成し、Price ID を取得
 - [ ] `routes/web.php` の CSRF 除外設定（`stripe/webhook`）
 
 ### 5.2 料金ページ・Checkout 実装

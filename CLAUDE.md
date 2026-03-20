@@ -19,7 +19,7 @@ docker compose exec app php artisan optimize:clear  # 全キャッシュクリ�
 docker compose exec app php artisan make:model ModelName -mrc
 
 # フロントエンドビルド（ローカルPCのみ・本番用）
-npm run build                  # public/build を生成してサーバーへアップ
+docker compose exec node npm run build  # public/build を生成してサーバーへアップ
 ```
 
 ## プロジェクト概要

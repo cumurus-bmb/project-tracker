@@ -17,12 +17,19 @@ php artisan migrate
 ### 環境変数
 
 ```env
-STRIPE_KEY=pk_live_xxx          # 公開可能キー
-STRIPE_SECRET=sk_live_xxx       # 秘密キー（サーバーサイドのみ）
+STRIPE_KEY=pk_test_xxx          # 公開可能キー（Sandbox: pk_test_、本番: pk_live_）
+STRIPE_SECRET=sk_test_xxx       # 秘密キー（サーバーサイドのみ）
 STRIPE_WEBHOOK_SECRET=whsec_xxx # Webhook署名シークレット
+STRIPE_PRICE_MONTHLY=price_xxx  # サブスクリプション月額プランの Price ID
 CASHIER_CURRENCY=jpy
 CASHIER_CURRENCY_LOCALE=ja_JP
 ```
+
+### Sandbox Price ID（開発環境）
+
+| 項目 | 値 |
+|------|----|
+| プレミアムプラン（¥50/月） | `price_1TCgAOGhzxAsAPQYdB7Fnyhl` |
 
 ## Userモデルへの Billable トレイト
 
@@ -100,7 +107,8 @@ protected $except = [
 ```
 
 ```bash
-# Webhook の Stripe CLI ローカルテスト（Docker内）
+# Webhook の Stripe CLI ローカルテスト
+# ※ Docker内ではなく WSL2 のターミナルで実行する
 stripe listen --forward-to localhost:8000/stripe/webhook
 ```
 
