@@ -44,30 +44,30 @@
   ```
 
 ### 1.3 認証システムの確認・カスタマイズ
-- [ ] Laravel Breeze（Inertia + React）の動作確認
-  - [ ] `/login` ログインページ
-  - [ ] `/register` 新規登録ページ
-  - [ ] `/forgot-password` パスワードリセットページ
-- [ ] `HandleInertiaRequests` ミドルウェアで共有 Props を設定
-  - [ ] `auth.user`
-  - [ ] `flash`（フラッシュメッセージ）
-  - [ ] `subscription`（プレミアム状態）
-- [ ] `AuthenticatedLayout` のカスタマイズ（ヘッダー・ナビゲーション）
-- [ ] 認証状態の動作確認
+- [x] Laravel Breeze（Inertia + React）の動作確認
+  - [x] `/login` ログインページ
+  - [x] `/register` 新規登録ページ
+  - [x] `/forgot-password` パスワードリセットページ
+- [x] `HandleInertiaRequests` ミドルウェアで共有 Props を設定
+  - [x] `auth.user`
+  - [x] `flash`（フラッシュメッセージ）
+  - [x] `subscription`（プレミアム状態）
+- [x] `AuthenticatedLayout` のカスタマイズ（ヘッダー・ナビゲーション）
+- [x] 認証状態の動作確認
 
 ## フェーズ2: 基本機能の実装
 
 ### 2.1 レイアウトとナビゲーション
-- [ ] `AuthenticatedLayout.tsx` のカスタマイズ
-  - [ ] ロゴ
-  - [ ] ナビゲーションメニュー（ダッシュボード・カテゴリ・レポート）
-  - [ ] ユーザードロップダウン（プロフィール・請求管理・ログアウト）
-- [ ] `GuestLayout.tsx` のカスタマイズ
-- [ ] トップページの作成（`/`）
-  - [ ] サービス紹介
-  - [ ] 機能説明
-  - [ ] CTA ボタン（ログイン・新規登録）
-  - [ ] 料金プランセクション
+- [x] `AuthenticatedLayout.tsx` のカスタマイズ
+  - [x] ロゴ
+  - [x] ナビゲーションメニュー（ダッシュボード・カテゴリ・レポート）
+  - [x] ユーザードロップダウン（プロフィール・請求管理・ログアウト）
+- [x] `GuestLayout.tsx` のカスタマイズ
+- [x] トップページの作成（`/`）
+  - [x] サービス紹介
+  - [x] 機能説明
+  - [x] CTA ボタン（ログイン・新規登録）
+  - [x] 料金プランセクション
 
 ### 2.2 ダッシュボード基本構造
 - [ ] `DashboardController@index` の作成
