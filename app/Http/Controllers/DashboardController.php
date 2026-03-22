@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -44,8 +45,9 @@ class DashboardController extends Controller
             ->get()
             ->map(fn ($log) => [
                 'id'               => $log->id,
-                'started_at'       => $log->started_at->setTimezone($timezone)->toISOString(),
-                'ended_at'         => $log->ended_at->setTimezone($timezone)->toISOString(),
+                'category_id'      => $log->category_id,
+                'started_at'       => $log->started_at->setTimezone($timezone)->toIso8601String(),
+                'ended_at'         => $log->ended_at->setTimezone($timezone)->toIso8601String(),
                 'duration_seconds' => $log->duration_seconds,
                 'memo'             => $log->memo,
                 'category'         => $log->category ? [
@@ -55,6 +57,11 @@ class DashboardController extends Controller
                 ] : null,
             ]);
 
+        $categories = Category::where('user_id', $user->id)
+            ->orderBy('is_favorite', 'desc')
+            ->orderBy('name')
+            ->get(['id', 'name', 'color', 'is_favorite']);
+
         return Inertia::render('Dashboard', [
             'stats' => [
                 'todaySeconds' => $todaySeconds,
@@ -63,6 +70,7 @@ class DashboardController extends Controller
             ],
             'recentLogs' => $recentLogs,
             'timezone'   => $timezone,
+            'categories' => $categories,
         ]);
     }
 }

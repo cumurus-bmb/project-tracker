@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WorkLogController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -16,6 +17,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('categories', CategoryController::class)->except(['show']);
+    Route::resource('work-logs', WorkLogController::class)->except(['show', 'create', 'edit']);
 });
 
 Route::middleware('auth')->group(function () {

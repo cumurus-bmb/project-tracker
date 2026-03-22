@@ -1,27 +1,14 @@
+import Timer from '@/Components/Timer';
+import WorkLogForm from '@/Components/WorkLogForm';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { DeleteDialog, EditModal, formatDuration, toDatePart, toHHMM } from '@/Pages/WorkLogs/Index';
 import { Head } from '@inertiajs/react';
-import { Clock, FolderKanban } from 'lucide-react';
-
-/** 秒数を「H時間M分」形式に変換 */
-function formatDuration(seconds) {
-    if (seconds === 0) return '0分';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h === 0) return `${m}分`;
-    if (m === 0) return `${h}時間`;
-    return `${h}時間${m}分`;
-}
-
-/** ISO文字列から「HH:MM」を取得 */
-function toHHMM(isoString) {
-    const d = new Date(isoString);
-    return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
+import { Clock, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 /** ISO文字列から「M/D」を取得 */
 function toMD(isoString) {
-    const d = new Date(isoString);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
+    return isoString.slice(5, 10).replace('-', '/');
 }
 
 function StatCard({ label, seconds }) {
@@ -35,50 +22,93 @@ function StatCard({ label, seconds }) {
     );
 }
 
-function WorkLogItem({ log }) {
-    const startTime = toHHMM(log.started_at);
-    const endTime   = toHHMM(log.ended_at);
-    const dateLabel = toMD(log.started_at);
-
+function WorkLogItem({ log, onEdit, onDelete }) {
     return (
-        <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-            {/* カテゴリカラードット */}
+        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
             <div
                 className="h-3 w-3 flex-shrink-0 rounded-full"
                 style={{ backgroundColor: log.category?.color ?? '#9CA3AF' }}
             />
-
-            {/* カテゴリ名 */}
-            <span className="w-24 flex-shrink-0 truncate text-sm font-medium text-gray-700">
+            <span className="w-20 flex-shrink-0 truncate text-sm font-medium text-gray-700">
                 {log.category?.name ?? '未分類'}
             </span>
-
-            {/* 日付・時刻 */}
             <span className="flex-1 text-sm text-gray-500">
-                {dateLabel}&nbsp;&nbsp;{startTime} 〜 {endTime}
+                {toMD(log.started_at)}&nbsp;&nbsp;{toHHMM(log.started_at)} 〜 {toHHMM(log.ended_at)}
             </span>
-
-            {/* 時間 */}
             <span className="flex-shrink-0 text-sm font-semibold text-gray-900">
                 {formatDuration(log.duration_seconds)}
             </span>
-
-            {/* メモ */}
             {log.memo && (
-                <span className="hidden max-w-[160px] truncate text-xs text-gray-400 sm:inline">
+                <span className="hidden max-w-[120px] truncate text-xs text-gray-400 sm:inline">
                     {log.memo}
                 </span>
             )}
+            <div className="ml-auto flex gap-1">
+                <button
+                    type="button"
+                    onClick={() => onEdit(log)}
+                    className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                    aria-label="編集"
+                >
+                    <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onDelete(log)}
+                    className="rounded-full p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    aria-label="削除"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </button>
+            </div>
         </div>
     );
 }
 
-export default function Dashboard({ stats, recentLogs }) {
+export default function Dashboard({ stats, recentLogs, categories }) {
+    const [activeTab, setActiveTab]       = useState('timer');
+    const [editTarget, setEditTarget]     = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+
     return (
         <AuthenticatedLayout>
             <Head title="ダッシュボード" />
 
             <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+
+                {/* タイマー / 手動入力 タブ */}
+                <section className="mb-8">
+                    <div className="mb-4 flex rounded-xl border border-gray-200 bg-gray-100 p-1">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('timer')}
+                            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'timer'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            タイマー
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('manual')}
+                            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'manual'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            手動入力
+                        </button>
+                    </div>
+
+                    {activeTab === 'timer' ? (
+                        <Timer categories={categories ?? []} />
+                    ) : (
+                        <WorkLogForm categories={categories ?? []} />
+                    )}
+                </section>
 
                 {/* 統計カード */}
                 <section className="mb-8">
@@ -109,12 +139,31 @@ export default function Dashboard({ stats, recentLogs }) {
                     ) : (
                         <div className="space-y-2">
                             {recentLogs.map((log) => (
-                                <WorkLogItem key={log.id} log={log} />
+                                <WorkLogItem
+                                    key={log.id}
+                                    log={log}
+                                    onEdit={setEditTarget}
+                                    onDelete={setDeleteTarget}
+                                />
                             ))}
                         </div>
                     )}
                 </section>
             </div>
+
+            {editTarget && (
+                <EditModal
+                    log={editTarget}
+                    categories={categories ?? []}
+                    onClose={() => setEditTarget(null)}
+                />
+            )}
+            {deleteTarget && (
+                <DeleteDialog
+                    log={deleteTarget}
+                    onClose={() => setDeleteTarget(null)}
+                />
+            )}
         </AuthenticatedLayout>
     );
 }

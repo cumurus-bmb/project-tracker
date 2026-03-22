@@ -1,3 +1,6 @@
+// Ziggy のグローバル route() 関数の型宣言
+declare function route(name: string, params?: Record<string, unknown> | number | string): string;
+
 export interface User {
     id: number;
     name: string;

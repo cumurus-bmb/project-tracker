@@ -93,32 +93,32 @@
 ## フェーズ3: 作業時間記録機能
 
 ### 3.1 タイマー機能の実装
-- [ ] `Components/Timer.tsx` の作成
-  - [ ] スタート/ストップボタン
-  - [ ] 一時停止/再開機能
-  - [ ] 経過時間表示（00:00:00 形式）
-  - [ ] タイマー状態の管理（React state）
-  - [ ] カテゴリ選択（必須）
+- [x] `Components/Timer.tsx` の作成
+  - [x] スタート/ストップボタン
+  - [x] 一時停止/再開機能
+  - [x] 経過時間表示（00:00:00 形式）
+  - [x] タイマー状態の管理（React state）
+  - [x] カテゴリ選択（必須）
 
 ### 3.2 手動入力機能
-- [ ] `Components/WorkLogForm.tsx` の作成
-  - [ ] 日付選択
-  - [ ] 作業時間直接入力（時間・分単位）
-  - [ ] カテゴリ選択（必須）
-  - [ ] メモ入力（オプション）
-- [ ] Inertia `useForm()` によるフォーム処理・バリデーション表示
+- [x] `Components/WorkLogForm.tsx` の作成
+  - [x] 日付選択
+  - [x] 作業時間直接入力（時間・分単位）
+  - [x] カテゴリ選択（必須）
+  - [x] メモ入力（オプション）
+- [x] Inertia `useForm()` によるフォーム処理・バリデーション表示
 
 ### 3.3 作業記録 Controller と Route
-- [ ] `WorkLogController` の実装（index / store / update / destroy）
-- [ ] `StoreWorkLogRequest` / `UpdateWorkLogRequest` の作成
-- [ ] ルート定義
+- [x] `WorkLogController` の実装（index / store / update / destroy）
+- [x] `StoreWorkLogRequest` / `UpdateWorkLogRequest` の作成
+- [x] ルート定義
   ```php
   Route::resource('work-logs', WorkLogController::class)->except(['show', 'create', 'edit']);
   ```
-- [ ] `Pages/WorkLogs/` コンポーネントの作成
-  - [ ] 作業履歴一覧（日付グルーピング・タイムゾーン対応）
-  - [ ] 編集ダイアログ
-  - [ ] 削除確認
+- [x] `Pages/WorkLogs/` コンポーネントの作成
+  - [x] 作業履歴一覧（日付グルーピング・タイムゾーン対応）
+  - [x] 編集ダイアログ
+  - [x] 削除確認
 
 ## フェーズ4: データ表示と基本分析
 
