@@ -6,8 +6,10 @@ use App\Http\Requests\StoreWorkLogRequest;
 use App\Http\Requests\UpdateWorkLogRequest;
 use App\Models\Category;
 use App\Models\WorkLog;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,22 +60,55 @@ class WorkLogController extends Controller
 
     public function store(StoreWorkLogRequest $request): RedirectResponse
     {
-        WorkLog::create([
-            ...$request->validated(),
-            'user_id' => Auth::id(),
-        ]);
+        $user     = Auth::user();
+        $timezone = $user->timezone ?? 'Asia/Tokyo';
+
+        $segments = $this->splitAcrossMidnights(
+            array_merge($request->validated(), ['user_id' => $user->id]),
+            $timezone
+        );
+
+        foreach ($segments as $segment) {
+            WorkLog::create($segment);
+        }
+
+        $message = count($segments) > 1
+            ? '作業を記録しました（日付をまたいだため ' . count($segments) . '件に分割されました）'
+            : '作業を記録しました';
 
         return redirect()->route('dashboard')
-            ->with('flash', ['message' => '作業を記録しました']);
+            ->with('flash', ['message' => $message]);
     }
 
     public function update(UpdateWorkLogRequest $request, WorkLog $workLog): RedirectResponse
     {
         abort_if($workLog->user_id !== Auth::id(), 403);
 
-        $workLog->update($request->validated());
+        $user     = Auth::user();
+        $timezone = $user->timezone ?? 'Asia/Tokyo';
 
-        return back()->with('flash', ['message' => '作業記録を更新しました']);
+        $segments = $this->splitAcrossMidnights(
+            array_merge($request->validated(), ['user_id' => $workLog->user_id]),
+            $timezone
+        );
+
+        if (count($segments) === 1) {
+            $workLog->update($segments[0]);
+
+            return back()->with('flash', ['message' => '作業記録を更新しました']);
+        }
+
+        // 分割が発生した場合: 元レコードを削除してから新規作成
+        DB::transaction(function () use ($workLog, $segments) {
+            $workLog->delete();
+            foreach ($segments as $segment) {
+                WorkLog::create($segment);
+            }
+        });
+
+        return back()->with('flash', [
+            'message' => '作業記録を更新しました（日付をまたいだため ' . count($segments) . '件に分割されました）',
+        ]);
     }
 
     public function destroy(WorkLog $workLog): RedirectResponse
@@ -83,5 +118,48 @@ class WorkLogController extends Controller
         $workLog->delete();
 
         return back()->with('flash', ['message' => '作業記録を削除しました']);
+    }
+
+    /**
+     * ユーザーのタイムゾーンの深夜0時境界で作業記録を分割する。
+     * 日付をまたがない場合はそのまま1件の配列を返す。
+     */
+    private function splitAcrossMidnights(array $data, string $timezone): array
+    {
+        $start = Carbon::parse($data['started_at'])->setTimezone($timezone);
+        $end   = Carbon::parse($data['ended_at'])->setTimezone($timezone);
+
+        $segments = [];
+        $cursor   = $start->copy();
+
+        while (true) {
+            // ユーザーTZにおける次の深夜0時
+            $nextMidnight = $cursor->copy()->startOfDay()->addDay();
+
+            if ($nextMidnight->greaterThanOrEqualTo($end)) {
+                // 最終セグメント（分割不要 or 最後の区間）
+                $segStart = $cursor->copy()->utc();
+                $segEnd   = $end->copy()->utc();
+                $segments[] = array_merge($data, [
+                    'started_at'       => $segStart->toISOString(),
+                    'ended_at'         => $segEnd->toISOString(),
+                    'duration_seconds' => (int) ($segEnd->getTimestamp() - $segStart->getTimestamp()),
+                ]);
+                break;
+            }
+
+            // 深夜0時をまたぐ区間
+            $segStart = $cursor->copy()->utc();
+            $segEnd   = $nextMidnight->copy()->utc();
+            $segments[] = array_merge($data, [
+                'started_at'       => $segStart->toISOString(),
+                'ended_at'         => $segEnd->toISOString(),
+                'duration_seconds' => (int) ($segEnd->getTimestamp() - $segStart->getTimestamp()),
+            ]);
+
+            $cursor = $nextMidnight;
+        }
+
+        return $segments;
     }
 }

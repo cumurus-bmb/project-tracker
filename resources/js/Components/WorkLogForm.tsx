@@ -37,6 +37,7 @@ export default function WorkLogForm({ categories }: Props) {
     const endedAt         = jstToDate(endDate, endTime);
     const durationSeconds = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
     const durationInvalid = durationSeconds <= 0;
+    const durationNegative = durationSeconds < 0;
 
     const durationLabel = (() => {
         if (durationSeconds <= 0) return null;
@@ -140,7 +141,7 @@ export default function WorkLogForm({ categories }: Props) {
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                     </div>
-                    {durationInvalid && endDate && endTime ? (
+                    {durationNegative ? (
                         <p className="mt-1 text-xs text-red-600">終了は開始より後の時刻を指定してください</p>
                     ) : durationLabel ? (
                         <p className="mt-1 text-xs text-gray-500">作業時間: {durationLabel}</p>

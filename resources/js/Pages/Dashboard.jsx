@@ -1,7 +1,7 @@
 import Timer from '@/Components/Timer';
 import WorkLogForm from '@/Components/WorkLogForm';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { DeleteDialog, EditModal, formatDuration, toDatePart, toHHMM } from '@/Pages/WorkLogs/Index';
+import { DeleteDialog, EditModal, formatDuration, toDatePart, toHHMM } from '@/Components/WorkHistory';
 import { Head } from '@inertiajs/react';
 import { Clock, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
