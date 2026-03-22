@@ -150,3 +150,17 @@ public function share(Request $request): array
 - クラス名・モデル名: PascalCase
 - メソッド名・変数名: camelCase
 - DB カラム名・ルート名: snake_case
+
+## 認可（Laravel 12 対応）
+
+Laravel 12 の基底 `Controller` クラスから `AuthorizesRequests` トレイトが削除された。`$this->authorize()` は使用不可。
+
+代わりに `abort_if()` で所有者チェックを行う。
+
+```php
+// NG（Laravel 12 では動かない）
+$this->authorize('update', $post);
+
+// OK
+abort_if($post->user_id !== Auth::id(), 403);
+```

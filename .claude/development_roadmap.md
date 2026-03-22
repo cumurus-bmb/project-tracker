@@ -70,22 +70,22 @@
   - [x] 料金プランセクション
 
 ### 2.2 ダッシュボード基本構造
-- [ ] `DashboardController@index` の作成
-- [ ] `Pages/Dashboard.tsx` の作成
-  - [ ] 今日の作業時間
-  - [ ] 今週の作業時間
-  - [ ] 今月の作業時間
-  - [ ] 直近の作業履歴（最新10件）
+- [x] `DashboardController@index` の作成
+- [x] `Pages/Dashboard.tsx` の作成
+  - [x] 今日の作業時間
+  - [x] 今週の作業時間
+  - [x] 今月の作業時間
+  - [x] 直近の作業履歴（最新10件）
 
 ### 2.3 カテゴリ管理機能
-- [ ] `CategoryController` の実装（index / store / update / destroy）
-- [ ] FormRequest の作成（`StoreCategoryRequest`, `UpdateCategoryRequest`）
-- [ ] `Pages/Categories/Index.tsx` の作成
-  - [ ] カテゴリ一覧表示
-  - [ ] カテゴリ作成フォーム（カテゴリ名・色選択・バリデーション）
-  - [ ] カテゴリ編集機能
-  - [ ] カテゴリ削除機能（確認ダイアログ付き）
-- [ ] ルート定義（`routes/web.php`）
+- [x] `CategoryController` の実装（index / store / update / destroy）
+- [x] FormRequest の作成（`StoreCategoryRequest`, `UpdateCategoryRequest`）
+- [x] `Pages/Categories/Index.tsx` の作成
+  - [x] カテゴリ一覧表示
+  - [x] カテゴリ作成フォーム（カテゴリ名・色選択・バリデーション）
+  - [x] カテゴリ編集機能
+  - [x] カテゴリ削除機能（確認ダイアログ付き）
+- [x] ルート定義（`routes/web.php`）
   ```php
   Route::resource('categories', CategoryController::class)->except(['show']);
   ```

@@ -35,6 +35,7 @@ const FREE_FEATURES = [
     '日・週・月の合計時間表示',
     '作業履歴の閲覧',
     'CSVエクスポート',
+    '基本的な分析機能',
 ];
 
 const PREMIUM_FEATURES = [

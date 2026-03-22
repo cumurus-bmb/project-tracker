@@ -94,3 +94,4 @@ Inertia v2のuseFormを使ってフォームを実装して。use context7
 | `.claude/rules/database.md` | MySQL・Eloquent・マイグレーション規約 |
 | `.claude/rules/stripe.md` | Stripe決済統合・Webhook処理 |
 | `.claude/rules/deployment.md` | Docker開発環境・ConoHa Wingsデプロイ |
+| `.claude/rules/knowlege.md` | 環境設定・キュー・Viteに関する運用上の注意（.env / docker-compose 編集時に自動ロード） |

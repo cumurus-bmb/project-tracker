@@ -183,3 +183,25 @@ export function useFlash() {
 - 型のみの import は `import { type Xxx }` を使用
 - `any` 型は禁止。不明な場合は `unknown` を使用
 - ESLint + Prettier 準拠
+
+## ページファイルの拡張子と Inertia リゾルバ
+
+新規ページはすべて `.tsx`（TypeScript）で作成する。
+
+`resources/js/app.jsx` のリゾルバは `.jsx`/`.tsx` 両対応にすること。`.jsx` 専用にすると `.tsx` ファイルが Inertia に認識されず白画面になる。
+
+```js
+// resources/js/app.jsx
+resolve: (name) => {
+    const pages = import.meta.glob('./Pages/**/*.{jsx,tsx}');
+    const tsxPath = `./Pages/${name}.tsx`;
+    const jsxPath = `./Pages/${name}.jsx`;
+    return resolvePageComponent(pages[tsxPath] ? tsxPath : jsxPath, pages);
+},
+```
+
+また `resources/views/app.blade.php` のページ別プリロードは削除する（`.jsx` 固定になるため）。
+
+```blade
+@vite(['resources/js/app.jsx'])
+```
