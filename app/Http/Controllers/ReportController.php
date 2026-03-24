@@ -33,11 +33,13 @@ class ReportController extends Controller
         $days         = max(1, (int) $currentStart->diffInDays($currentEnd) + 1);
         $dailyAverage = $tab !== 'daily' ? (int) round($currentSeconds / $days) : null;
 
-        $categoryStats = $this->categoryBreakdown($user, $currentStart, $currentEnd);
-        $barChartData  = $this->barChartData($user, $currentStart, $currentEnd, $tab, $timezone);
-        $heatmapData   = in_array($tab, ['monthly', 'yearly'])
+        $categoryStats      = $this->categoryBreakdown($user, $currentStart, $currentEnd);
+        $barChartData       = $this->barChartData($user, $currentStart, $currentEnd, $tab, $timezone);
+        $heatmapData        = in_array($tab, ['monthly', 'yearly'])
             ? $this->heatmapData($user, $currentStart, $currentEnd, $timezone)
             : [];
+        $productivityStats  = $this->productivityStats($user, $currentStart, $currentEnd, $timezone);
+        $categoryTrend      = $this->categoryTrendData($user, $currentStart, $currentEnd, $tab, $timezone);
 
         return Inertia::render('Reports/Index', [
             'tab'         => $tab,
@@ -52,9 +54,11 @@ class ReportController extends Controller
                 'dailyAverage'    => $dailyAverage,
                 'days'            => $days,
             ],
-            'categoryStats' => $categoryStats,
-            'barChartData'  => $barChartData,
-            'heatmapData'   => $heatmapData,
+            'categoryStats'     => $categoryStats,
+            'barChartData'      => $barChartData,
+            'heatmapData'       => $heatmapData,
+            'productivityStats' => $productivityStats,
+            'categoryTrend'     => $categoryTrend,
         ]);
     }
 
@@ -158,6 +162,117 @@ class ReportController extends Controller
                 $end->copy()->utc(),
             ])
             ->sum('duration_seconds');
+    }
+
+    private function productivityStats($user, Carbon $start, Carbon $end, string $timezone): array
+    {
+        $logs = $user->workLogs()
+            ->whereBetween('started_at', [$start->copy()->utc(), $end->copy()->utc()])
+            ->get(['started_at', 'duration_seconds']);
+
+        if ($logs->isEmpty()) {
+            return ['sessionCount' => 0, 'avgSessionSeconds' => 0, 'peakHours' => []];
+        }
+
+        $sessionCount = $logs->count();
+        $totalSeconds = $logs->sum('duration_seconds');
+        $avgSession   = (int) round($totalSeconds / $sessionCount);
+
+        $hourBuckets = array_fill(0, 24, 0);
+        foreach ($logs as $log) {
+            $hour = Carbon::parse($log->started_at)->setTimezone($timezone)->hour;
+            $hourBuckets[$hour] += $log->duration_seconds;
+        }
+
+        arsort($hourBuckets);
+        $peakHours = [];
+        foreach (array_slice($hourBuckets, 0, 3, true) as $hour => $seconds) {
+            if ($seconds > 0) {
+                $peakHours[] = $hour;
+            }
+        }
+
+        return [
+            'sessionCount'      => $sessionCount,
+            'avgSessionSeconds' => $avgSession,
+            'peakHours'         => $peakHours,
+        ];
+    }
+
+    private function categoryTrendData($user, Carbon $start, Carbon $end, string $tab, string $timezone): array
+    {
+        $logs = $user->workLogs()
+            ->with('category:id,name,color')
+            ->whereBetween('started_at', [$start->copy()->utc(), $end->copy()->utc()])
+            ->get(['category_id', 'started_at', 'duration_seconds']);
+
+        if ($logs->isEmpty()) {
+            return ['categories' => [], 'data' => []];
+        }
+
+        // Top 5 categories by total time
+        $catTotals = [];
+        $catColors = [];
+        foreach ($logs as $log) {
+            $name = $log->category?->name ?? '未分類';
+            $catTotals[$name] = ($catTotals[$name] ?? 0) + $log->duration_seconds;
+            if (!isset($catColors[$name])) {
+                $catColors[$name] = $log->category?->color ?? '#9CA3AF';
+            }
+        }
+        arsort($catTotals);
+        $topNames   = array_slice(array_keys($catTotals), 0, 5);
+        $categories = array_map(fn ($n) => ['name' => $n, 'color' => $catColors[$n]], $topNames);
+
+        // Build bucket config
+        switch ($tab) {
+            case 'daily':
+                $bucketCount = 24;
+                $labels      = array_map(fn ($h) => "{$h}時", range(0, 23));
+                $getIdx      = fn ($log) => Carbon::parse($log->started_at)->setTimezone($timezone)->hour;
+                break;
+            case 'weekly':
+                $bucketCount = 7;
+                $labels      = ['月', '火', '水', '木', '金', '土', '日'];
+                $getIdx      = function ($log) use ($timezone) {
+                    $dow = Carbon::parse($log->started_at)->setTimezone($timezone)->dayOfWeek;
+                    return $dow === 0 ? 6 : $dow - 1;
+                };
+                break;
+            case 'yearly':
+                $bucketCount = 12;
+                $labels      = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                $getIdx      = fn ($log) => Carbon::parse($log->started_at)->setTimezone($timezone)->month - 1;
+                break;
+            default: // monthly
+                $bucketCount = $start->daysInMonth;
+                $labels      = array_map(fn ($d) => (string) $d, range(1, $bucketCount));
+                $getIdx      = fn ($log) => Carbon::parse($log->started_at)->setTimezone($timezone)->day - 1;
+        }
+
+        // Initialize matrix
+        $matrix = [];
+        for ($i = 0; $i < $bucketCount; $i++) {
+            $row = ['label' => $labels[$i]];
+            foreach ($topNames as $name) {
+                $row[$name] = 0;
+            }
+            $matrix[$i] = $row;
+        }
+
+        // Fill
+        foreach ($logs as $log) {
+            $name = $log->category?->name ?? '未分類';
+            if (!in_array($name, $topNames)) {
+                continue;
+            }
+            $idx = $getIdx($log);
+            if (isset($matrix[$idx])) {
+                $matrix[$idx][$name] += $log->duration_seconds;
+            }
+        }
+
+        return ['categories' => $categories, 'data' => array_values($matrix)];
     }
 
     private function barChartData($user, Carbon $start, Carbon $end, string $tab, string $timezone): array
