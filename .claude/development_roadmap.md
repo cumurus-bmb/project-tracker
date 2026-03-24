@@ -208,7 +208,7 @@
 - [x] カテゴリごとの推移グラフ
 
 ### 5.7 レポート機能（プレミアム）
-- [ ] PDF レポート生成（html2canvas + jsPDF、日本語対応）
+- [x] PDF レポート生成（html2canvas + jsPDF、日本語対応）
 
 ## フェーズ6: 本番デプロイ（ConoHa WING）
 

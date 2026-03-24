@@ -2,7 +2,8 @@ import { formatDuration } from '@/Components/WorkHistory';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { type PageProps } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { Download, Loader2, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { useRef, useState } from 'react';
 import {
     Bar,
     BarChart,
@@ -309,6 +310,47 @@ function YearlyHeatmap({ data }: { data: HeatmapDay[] }) {
 }
 
 // ──────────────────────────────────────────────────────────
+// PDF 生成
+// ──────────────────────────────────────────────────────────
+
+async function generatePdf(element: HTMLElement, filename: string): Promise<void> {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+    ]);
+
+    const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const iw = pw;
+    const ih = (canvas.height * iw) / canvas.width;
+
+    let left = ih;
+    let pos  = 0;
+
+    pdf.addImage(imgData, 'JPEG', 0, pos, iw, ih);
+    left -= ph;
+
+    while (left > 0) {
+        pos -= ph;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, pos, iw, ih);
+        left -= ph;
+    }
+
+    pdf.save(filename);
+}
+
+// ──────────────────────────────────────────────────────────
 // メインコンポーネント
 // ──────────────────────────────────────────────────────────
 
@@ -317,20 +359,31 @@ export default function Index({
     stats, categoryStats, barChartData, heatmapData,
     productivityStats, categoryTrend,
 }: Props) {
-    const handleTabChange = (newTab: Tab) => {
-        navigate(newTab, DEFAULT_PERIODS[newTab]);
-    };
+    const reportRef         = useRef<HTMLDivElement>(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+
+    const handleTabChange = (newTab: Tab) => navigate(newTab, DEFAULT_PERIODS[newTab]);
 
     const handlePeriodChange = (newPeriod: string) => {
-        if (newPeriod !== 'custom') {
-            navigate(tab, newPeriod);
-        } else {
-            navigate(tab, 'custom');
-        }
+        if (newPeriod !== 'custom') navigate(tab, newPeriod);
+        else navigate(tab, 'custom');
     };
 
     const handleCustomFrom = (value: string) => {
         if (value) navigate(tab, 'custom', value);
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!reportRef.current || pdfLoading) return;
+        setPdfLoading(true);
+        try {
+            const safe = periodLabel.replace(/[/\\?%*:|"<>]/g, '-');
+            await generatePdf(reportRef.current, `作業レポート_${safe}.pdf`);
+        } catch (e) {
+            console.error('PDF generation failed:', e);
+        } finally {
+            setPdfLoading(false);
+        }
     };
 
     const isUp   = stats.diffSeconds > 0;
@@ -348,7 +401,22 @@ export default function Index({
             <Head title="詳細統計" />
 
             <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                <h1 className="mb-6 text-xl font-bold text-gray-900">詳細統計</h1>
+                {/* ヘッダー */}
+                <div className="mb-6 flex items-center justify-between">
+                    <h1 className="text-xl font-bold text-gray-900">詳細統計</h1>
+                    <button
+                        type="button"
+                        onClick={handleDownloadPdf}
+                        disabled={pdfLoading || !hasData}
+                        className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        {pdfLoading ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" />生成中…</>
+                        ) : (
+                            <><Download className="h-4 w-4" />PDFで保存</>
+                        )}
+                    </button>
+                </div>
 
                 {/* タブ */}
                 <div className="mb-4 flex rounded-xl border border-gray-200 bg-gray-100 p-1">
@@ -395,329 +463,306 @@ export default function Index({
                     )}
                 </div>
 
-                {/* 期間ラベル */}
-                <p className="mb-6 text-base font-semibold text-gray-700">{periodLabel}</p>
+                {/* ──── PDF に取り込む範囲 ──── */}
+                <div ref={reportRef}>
+                    {/* 期間ラベル */}
+                    <p className="mb-6 text-base font-semibold text-gray-700">{periodLabel}</p>
 
-                {/* サマリーカード */}
-                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                        <p className="mb-1 text-sm text-gray-500">合計時間</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                            {formatDuration(stats.currentSeconds)}
-                        </p>
-                        {stats.days > 1 && (
-                            <p className="mt-1 text-xs text-gray-400">{stats.days}日間</p>
+                    {/* サマリーカード */}
+                    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                            <p className="mb-1 text-sm text-gray-500">合計時間</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {formatDuration(stats.currentSeconds)}
+                            </p>
+                            {stats.days > 1 && (
+                                <p className="mt-1 text-xs text-gray-400">{stats.days}日間</p>
+                            )}
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                            <p className="mb-1 text-sm text-gray-500">{COMPARISON_LABELS[tab]}</p>
+                            {!hasPrevData ? (
+                                <p className="text-2xl font-bold text-gray-400">データなし</p>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        {isUp   && <TrendingUp   className="h-5 w-5 text-green-600" />}
+                                        {isDown && <TrendingDown className="h-5 w-5 text-red-600" />}
+                                        {isFlat && <Minus        className="h-5 w-5 text-gray-400" />}
+                                        <p className={`text-2xl font-bold ${diffColor}`}>
+                                            {isUp ? '+' : isDown ? '-' : ''}
+                                            {formatDuration(Math.abs(stats.diffSeconds))}
+                                        </p>
+                                    </div>
+                                    {stats.diffPercentage !== null && (
+                                        <p className={`mt-1 text-xs ${diffColor}`}>
+                                            {isUp ? '+' : ''}{stats.diffPercentage}%
+                                        </p>
+                                    )}
+                                    {stats.diffPercentage === null && stats.previousSeconds === 0 && (
+                                        <p className="mt-1 text-xs text-gray-400">前期間の記録なし</p>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {stats.dailyAverage !== null && (
+                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                <p className="mb-1 text-sm text-gray-500">1日平均</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {formatDuration(stats.dailyAverage)}
+                                </p>
+                                <p className="mt-1 text-xs text-gray-400">{stats.days}日間の平均</p>
+                            </div>
                         )}
                     </div>
 
-                    <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                        <p className="mb-1 text-sm text-gray-500">{COMPARISON_LABELS[tab]}</p>
-                        {!hasPrevData ? (
-                            <p className="text-2xl font-bold text-gray-400">データなし</p>
-                        ) : (
-                            <>
-                                <div className="flex items-center gap-2">
-                                    {isUp   && <TrendingUp   className="h-5 w-5 text-green-600" />}
-                                    {isDown && <TrendingDown className="h-5 w-5 text-red-600" />}
-                                    {isFlat && <Minus        className="h-5 w-5 text-gray-400" />}
-                                    <p className={`text-2xl font-bold ${diffColor}`}>
-                                        {isUp ? '+' : isDown ? '-' : ''}
-                                        {formatDuration(Math.abs(stats.diffSeconds))}
+                    {/* 生産性指標 */}
+                    {hasData && (
+                        <section className="mb-8">
+                            <h2 className="mb-4 text-lg font-semibold text-gray-900">生産性指標</h2>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                    <p className="mb-1 text-sm text-gray-500">セッション数</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {productivityStats.sessionCount}
+                                        <span className="ml-1 text-base font-normal text-gray-500">回</span>
                                     </p>
                                 </div>
-                                {stats.diffPercentage !== null && (
-                                    <p className={`mt-1 text-xs ${diffColor}`}>
-                                        {isUp ? '+' : ''}{stats.diffPercentage}%
+
+                                <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                    <p className="mb-1 text-sm text-gray-500">平均セッション時間</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {formatDuration(productivityStats.avgSessionSeconds)}
                                     </p>
-                                )}
-                                {stats.diffPercentage === null && stats.previousSeconds === 0 && (
-                                    <p className="mt-1 text-xs text-gray-400">前期間の記録なし</p>
-                                )}
-                            </>
-                        )}
-                    </div>
+                                    <p className="mt-1 text-xs text-gray-400">1回あたり</p>
+                                </div>
 
-                    {stats.dailyAverage !== null && (
-                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                            <p className="mb-1 text-sm text-gray-500">1日平均</p>
-                            <p className="text-2xl font-bold text-gray-900">
-                                {formatDuration(stats.dailyAverage)}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-400">{stats.days}日間の平均</p>
-                        </div>
+                                <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                    <p className="mb-2 text-sm text-gray-500">集中ピーク時間帯</p>
+                                    {productivityStats.peakHours.length === 0 ? (
+                                        <p className="text-sm text-gray-400">データなし</p>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {productivityStats.peakHours.map((hour, i) => (
+                                                <span
+                                                    key={hour}
+                                                    className={`rounded-lg px-2.5 py-1 text-sm font-semibold ${
+                                                        i === 0
+                                                            ? 'bg-blue-500 text-white'
+                                                            : 'border border-blue-200 bg-blue-50 text-blue-700'
+                                                    }`}
+                                                >
+                                                    {hour}時台
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
                     )}
-                </div>
 
-                {/* 生産性指標 */}
-                {hasData && (
+                    {/* 棒グラフ：作業時間の推移 */}
+                    {hasData && (
+                        <section className="mb-8">
+                            <h2 className="mb-4 text-lg font-semibold text-gray-900">作業時間の推移</h2>
+                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart
+                                        data={barChartData}
+                                        margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                                        <XAxis
+                                            dataKey="label"
+                                            tick={{ fontSize: 11, fill: '#6B7280' }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            interval={xTickInterval}
+                                        />
+                                        <YAxis
+                                            tickFormatter={formatYTick}
+                                            tick={{ fontSize: 11, fill: '#6B7280' }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            width={40}
+                                        />
+                                        <Tooltip content={<BarTooltip />} cursor={{ fill: '#F3F4F6' }} />
+                                        <Bar dataKey="seconds" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* カテゴリ別推移グラフ */}
+                    {hasData && categoryTrend.categories.length > 0 && (
+                        <section className="mb-8">
+                            <h2 className="mb-4 text-lg font-semibold text-gray-900">カテゴリ別推移</h2>
+                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart
+                                        data={categoryTrend.data}
+                                        margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                                        <XAxis
+                                            dataKey="label"
+                                            tick={{ fontSize: 11, fill: '#6B7280' }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            interval={xTickInterval}
+                                        />
+                                        <YAxis
+                                            tickFormatter={formatYTick}
+                                            tick={{ fontSize: 11, fill: '#6B7280' }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            width={40}
+                                        />
+                                        <Tooltip content={<TrendTooltip />} cursor={{ fill: '#F3F4F6' }} />
+                                        {categoryTrend.categories.map(cat => (
+                                            <Bar
+                                                key={cat.name}
+                                                dataKey={cat.name}
+                                                stackId="stack"
+                                                fill={cat.color}
+                                                maxBarSize={40}
+                                            />
+                                        ))}
+                                    </BarChart>
+                                </ResponsiveContainer>
+                                <div className="mt-3 flex flex-wrap gap-3">
+                                    {categoryTrend.categories.map(cat => (
+                                        <div key={cat.name} className="flex items-center gap-1.5">
+                                            <div
+                                                className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
+                                                style={{ backgroundColor: cat.color }}
+                                            />
+                                            <span className="text-xs text-gray-600">{cat.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* カテゴリ別分析 */}
                     <section className="mb-8">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">生産性指標</h2>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            {/* セッション数 */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                                <p className="mb-1 text-sm text-gray-500">セッション数</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {productivityStats.sessionCount}
-                                    <span className="ml-1 text-base font-normal text-gray-500">回</span>
-                                </p>
-                            </div>
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">カテゴリ別分析</h2>
 
-                            {/* 平均セッション時間 */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                                <p className="mb-1 text-sm text-gray-500">平均セッション時間</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {formatDuration(productivityStats.avgSessionSeconds)}
-                                </p>
-                                <p className="mt-1 text-xs text-gray-400">1回あたり</p>
+                        {categoryStats.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white py-12 text-center shadow-sm">
+                                <p className="text-sm text-gray-500">この期間の作業記録はありません</p>
                             </div>
-
-                            {/* 集中ピーク時間帯 */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                                <p className="mb-2 text-sm text-gray-500">集中ピーク時間帯</p>
-                                {productivityStats.peakHours.length === 0 ? (
-                                    <p className="text-sm text-gray-400">データなし</p>
-                                ) : (
-                                    <div className="flex flex-wrap gap-2">
-                                        {productivityStats.peakHours.map((hour, i) => (
-                                            <span
-                                                key={hour}
-                                                className={`rounded-lg px-2.5 py-1 text-sm font-semibold ${
-                                                    i === 0
-                                                        ? 'bg-blue-500 text-white'
-                                                        : 'border border-blue-200 bg-blue-50 text-blue-700'
-                                                }`}
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                    <p className="mb-2 text-sm font-medium text-gray-700">時間配分</p>
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <PieChart>
+                                            <Pie
+                                                data={categoryStats}
+                                                dataKey="seconds"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={55}
+                                                outerRadius={85}
+                                                paddingAngle={2}
                                             >
-                                                {hour}時台
-                                            </span>
+                                                {categoryStats.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<PieTooltip />} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="mt-2 space-y-1.5">
+                                        {categoryStats.map(stat => (
+                                            <div key={stat.name} className="flex items-center gap-2">
+                                                <div
+                                                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                                                    style={{ backgroundColor: stat.color }}
+                                                />
+                                                <span className="flex-1 truncate text-xs text-gray-700">
+                                                    {stat.name}
+                                                </span>
+                                                <span className="text-xs font-medium text-gray-900">
+                                                    {formatDuration(stat.seconds)}
+                                                </span>
+                                                <span className="w-8 text-right text-xs text-gray-500">
+                                                    {stat.percentage}%
+                                                </span>
+                                            </div>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </section>
-                )}
-
-                {/* 棒グラフ：作業時間の推移 */}
-                {hasData && (
-                    <section className="mb-8">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">作業時間の推移</h2>
-                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                            <ResponsiveContainer width="100%" height={220}>
-                                <BarChart
-                                    data={barChartData}
-                                    margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-                                >
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                        stroke="#E5E7EB"
-                                        vertical={false}
-                                    />
-                                    <XAxis
-                                        dataKey="label"
-                                        tick={{ fontSize: 11, fill: '#6B7280' }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        interval={xTickInterval}
-                                    />
-                                    <YAxis
-                                        tickFormatter={formatYTick}
-                                        tick={{ fontSize: 11, fill: '#6B7280' }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        width={40}
-                                    />
-                                    <Tooltip
-                                        content={<BarTooltip />}
-                                        cursor={{ fill: '#F3F4F6' }}
-                                    />
-                                    <Bar
-                                        dataKey="seconds"
-                                        fill="#3B82F6"
-                                        radius={[4, 4, 0, 0]}
-                                        maxBarSize={40}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </section>
-                )}
-
-                {/* カテゴリ別推移グラフ */}
-                {hasData && categoryTrend.categories.length > 0 && (
-                    <section className="mb-8">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">カテゴリ別推移</h2>
-                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                            <ResponsiveContainer width="100%" height={220}>
-                                <BarChart
-                                    data={categoryTrend.data}
-                                    margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-                                >
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                        stroke="#E5E7EB"
-                                        vertical={false}
-                                    />
-                                    <XAxis
-                                        dataKey="label"
-                                        tick={{ fontSize: 11, fill: '#6B7280' }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        interval={xTickInterval}
-                                    />
-                                    <YAxis
-                                        tickFormatter={formatYTick}
-                                        tick={{ fontSize: 11, fill: '#6B7280' }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        width={40}
-                                    />
-                                    <Tooltip
-                                        content={<TrendTooltip />}
-                                        cursor={{ fill: '#F3F4F6' }}
-                                    />
-                                    {categoryTrend.categories.map(cat => (
-                                        <Bar
-                                            key={cat.name}
-                                            dataKey={cat.name}
-                                            stackId="stack"
-                                            fill={cat.color}
-                                            maxBarSize={40}
-                                        />
-                                    ))}
-                                </BarChart>
-                            </ResponsiveContainer>
-                            {/* 凡例 */}
-                            <div className="mt-3 flex flex-wrap gap-3">
-                                {categoryTrend.categories.map(cat => (
-                                    <div key={cat.name} className="flex items-center gap-1.5">
-                                        <div
-                                            className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
-                                            style={{ backgroundColor: cat.color }}
-                                        />
-                                        <span className="text-xs text-gray-600">{cat.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-                )}
-
-                {/* カテゴリ別分析 */}
-                <section className="mb-8">
-                    <h2 className="mb-4 text-lg font-semibold text-gray-900">カテゴリ別分析</h2>
-
-                    {categoryStats.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white py-12 text-center shadow-sm">
-                            <p className="text-sm text-gray-500">この期間の作業記録はありません</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                            {/* 円グラフ */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                                <p className="mb-2 text-sm font-medium text-gray-700">時間配分</p>
-                                <ResponsiveContainer width="100%" height={200}>
-                                    <PieChart>
-                                        <Pie
-                                            data={categoryStats}
-                                            dataKey="seconds"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={55}
-                                            outerRadius={85}
-                                            paddingAngle={2}
-                                        >
-                                            {categoryStats.map((entry, i) => (
-                                                <Cell key={i} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip content={<PieTooltip />} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                {/* 凡例 */}
-                                <div className="mt-2 space-y-1.5">
-                                    {categoryStats.map(stat => (
-                                        <div key={stat.name} className="flex items-center gap-2">
-                                            <div
-                                                className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                                                style={{ backgroundColor: stat.color }}
-                                            />
-                                            <span className="flex-1 truncate text-xs text-gray-700">
-                                                {stat.name}
-                                            </span>
-                                            <span className="text-xs font-medium text-gray-900">
-                                                {formatDuration(stat.seconds)}
-                                            </span>
-                                            <span className="w-8 text-right text-xs text-gray-500">
-                                                {stat.percentage}%
-                                            </span>
-                                        </div>
-                                    ))}
                                 </div>
-                            </div>
 
-                            {/* プログレスバー内訳 */}
-                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                                <p className="mb-3 text-sm font-medium text-gray-700">詳細内訳</p>
-                                <div className="space-y-4">
-                                    {categoryStats.map(stat => (
-                                        <div key={stat.name}>
-                                            <div className="mb-1.5 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
+                                <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                    <p className="mb-3 text-sm font-medium text-gray-700">詳細内訳</p>
+                                    <div className="space-y-4">
+                                        {categoryStats.map(stat => (
+                                            <div key={stat.name}>
+                                                <div className="mb-1.5 flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="h-3 w-3 flex-shrink-0 rounded-full"
+                                                            style={{ backgroundColor: stat.color }}
+                                                        />
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                            {stat.name}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm font-semibold text-gray-900">
+                                                            {formatDuration(stat.seconds)}
+                                                        </span>
+                                                        <span className="w-9 text-right text-xs text-gray-500">
+                                                            {stat.percentage}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                                                     <div
-                                                        className="h-3 w-3 flex-shrink-0 rounded-full"
-                                                        style={{ backgroundColor: stat.color }}
+                                                        className="h-full rounded-full transition-all duration-300"
+                                                        style={{
+                                                            width: `${stat.percentage}%`,
+                                                            backgroundColor: stat.color,
+                                                        }}
                                                     />
-                                                    <span className="text-sm font-medium text-gray-700">
-                                                        {stat.name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-sm font-semibold text-gray-900">
-                                                        {formatDuration(stat.seconds)}
-                                                    </span>
-                                                    <span className="w-9 text-right text-xs text-gray-500">
-                                                        {stat.percentage}%
-                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                                <div
-                                                    className="h-full rounded-full transition-all duration-300"
-                                                    style={{
-                                                        width: `${stat.percentage}%`,
-                                                        backgroundColor: stat.color,
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* ヒートマップ（月次・年次のみ） */}
-                {heatmapData.length > 0 && hasData && (
-                    <section className="mb-8">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">作業カレンダー</h2>
-                        <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
-                            {tab === 'monthly' ? (
-                                <MonthlyHeatmap data={heatmapData} />
-                            ) : (
-                                <YearlyHeatmap data={heatmapData} />
-                            )}
-                            {/* カラーレジェンド */}
-                            <div className="mt-4 flex items-center gap-1.5">
-                                <span className="text-xs text-gray-500">少ない</span>
-                                {HEATMAP_COLORS.map((c, i) => (
-                                    <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
-                                ))}
-                                <span className="text-xs text-gray-500">多い</span>
-                            </div>
-                        </div>
+                        )}
                     </section>
-                )}
+
+                    {/* ヒートマップ（月次・年次のみ） */}
+                    {heatmapData.length > 0 && hasData && (
+                        <section className="mb-8">
+                            <h2 className="mb-4 text-lg font-semibold text-gray-900">作業カレンダー</h2>
+                            <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-md">
+                                {tab === 'monthly' ? (
+                                    <MonthlyHeatmap data={heatmapData} />
+                                ) : (
+                                    <YearlyHeatmap data={heatmapData} />
+                                )}
+                                <div className="mt-4 flex items-center gap-1.5">
+                                    <span className="text-xs text-gray-500">少ない</span>
+                                    {HEATMAP_COLORS.map((c, i) => (
+                                        <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
+                                    ))}
+                                    <span className="text-xs text-gray-500">多い</span>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+                </div>
+                {/* ──── PDF 取り込み範囲ここまで ──── */}
             </div>
         </AuthenticatedLayout>
     );
