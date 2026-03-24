@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WorkLogController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/export', [ExportController::class, 'export'])->name('export');
     Route::post('/subscribe/{plan}', [SubscriptionController::class, 'checkout'])->name('subscribe');
     Route::get('/billing', [SubscriptionController::class, 'billingPortal'])->name('billing');
+});
+
+Route::middleware(['auth', 'verified', 'subscribed'])->group(function () {
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 });
 
 Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('pricing');
