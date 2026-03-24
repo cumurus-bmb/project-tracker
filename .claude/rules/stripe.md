@@ -29,7 +29,7 @@ CASHIER_CURRENCY_LOCALE=ja_JP
 
 | 項目 | 値 |
 |------|----|
-| プレミアムプラン（¥50/月） | `price_1TCgAOGhzxAsAPQYdB7Fnyhl` |
+| プレミアムプラン（¥100/月） | `price_1TCgAOGhzxAsAPQYdB7Fnyhl` |
 
 ## Userモデルへの Billable トレイト
 

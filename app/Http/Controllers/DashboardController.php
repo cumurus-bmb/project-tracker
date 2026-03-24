@@ -37,6 +37,29 @@ class DashboardController extends Controller
             ->where('started_at', '>=', $monthStart)
             ->sum('duration_seconds');
 
+        // 今月のカテゴリ別統計
+        $categoryStats = $user->workLogs()
+            ->with('category:id,name,color')
+            ->where('started_at', '>=', $monthStart)
+            ->get(['category_id', 'duration_seconds'])
+            ->groupBy('category_id')
+            ->map(fn ($logs, $categoryId) => [
+                'category_id' => (int) $categoryId,
+                'name'        => $logs->first()->category?->name ?? '未分類',
+                'color'       => $logs->first()->category?->color ?? '#9CA3AF',
+                'seconds'     => (int) $logs->sum('duration_seconds'),
+            ])
+            ->sortByDesc('seconds')
+            ->values();
+
+        $totalCategorySeconds = $categoryStats->sum('seconds');
+
+        $categoryStats = $categoryStats->map(fn ($stat) => array_merge($stat, [
+            'percentage' => $totalCategorySeconds > 0
+                ? (int) round(($stat['seconds'] / $totalCategorySeconds) * 100)
+                : 0,
+        ]))->values();
+
         // 直近10件（カテゴリ付き）
         $recentLogs = $user->workLogs()
             ->with('category')
@@ -68,9 +91,10 @@ class DashboardController extends Controller
                 'weekSeconds'  => $weekSeconds,
                 'monthSeconds' => $monthSeconds,
             ],
-            'recentLogs' => $recentLogs,
-            'timezone'   => $timezone,
-            'categories' => $categories,
+            'categoryStats' => $categoryStats,
+            'recentLogs'    => $recentLogs,
+            'timezone'      => $timezone,
+            'categories'    => $categories,
         ]);
     }
 }

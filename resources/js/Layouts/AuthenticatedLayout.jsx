@@ -11,6 +11,7 @@ import {
     LogOut,
     Menu,
     Settings,
+    Sparkles,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -48,7 +49,7 @@ function FlashMessage({ flash }) {
     );
 }
 
-function NavLink({ label, href, routeName, icon: Icon, premium, onClick }) {
+function NavLink({ label, href, routeName, icon: Icon, premium, isSubscribed, onClick }) {
     const isActive = () => {
         try {
             return route().current(routeName);
@@ -58,29 +59,32 @@ function NavLink({ label, href, routeName, icon: Icon, premium, onClick }) {
     };
 
     const active = isActive();
+    const locked = premium && !isSubscribed;
+    const resolvedHref = locked ? route('pricing') : href;
 
     return (
         <Link
-            href={href}
+            href={resolvedHref}
             onClick={onClick}
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                 active
                     ? 'bg-blue-500 text-white'
-                    : premium
+                    : locked
                         ? 'text-gray-400 hover:bg-gray-100'
                         : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700'
             }`}
         >
             <Icon className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1">{label}</span>
-            {premium && !active && <Lock className="h-3 w-3 flex-shrink-0" />}
+            {locked && <Lock className="h-3 w-3 flex-shrink-0" />}
         </Link>
     );
 }
 
 export default function AuthenticatedLayout({ children }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, subscription } = usePage().props;
     const user = auth.user;
+    const isSubscribed = subscription?.isSubscribed ?? false;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
@@ -157,9 +161,25 @@ export default function AuthenticatedLayout({ children }) {
                         </p>
                         <div className="space-y-1">
                             {NAV_ITEMS.map((item) => (
-                                <NavLink key={item.href} {...item} />
+                                <NavLink key={item.href} {...item} isSubscribed={isSubscribed} />
                             ))}
                         </div>
+
+                        {/* アップグレード CTA（未加入ユーザーのみ） */}
+                        {!isSubscribed && (
+                            <div className="mt-3">
+                                <Link
+                                    href={route('pricing')}
+                                    className="flex flex-col gap-1 rounded-xl border border-blue-200 bg-blue-50 p-3 transition-colors hover:bg-blue-100"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="h-4 w-4 text-blue-600" />
+                                        <span className="text-xs font-semibold text-blue-700">プレミアムにアップグレード</span>
+                                    </div>
+                                    <p className="text-xs text-blue-600">詳細分析・グラフ機能を解放</p>
+                                </Link>
+                            </div>
+                        )}
                     </nav>
                 </aside>
 
@@ -200,6 +220,7 @@ export default function AuthenticatedLayout({ children }) {
                                     <NavLink
                                         key={item.href}
                                         {...item}
+                                        isSubscribed={isSubscribed}
                                         onClick={() => setMobileOpen(false)}
                                     />
                                 ))}

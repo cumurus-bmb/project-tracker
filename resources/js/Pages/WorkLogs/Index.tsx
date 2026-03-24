@@ -1,3 +1,4 @@
+import ExportButton from '@/Components/ExportButton';
 import WorkHistory, { type GroupedLog } from '@/Components/WorkHistory';
 // 後方互換のため再エクスポート
 export { DeleteDialog, EditModal, formatDuration, toDatePart, toHHMM } from '@/Components/WorkHistory';
@@ -19,10 +20,14 @@ export default function Index({ grouped, categories }: Props) {
             <Head title="作業履歴" />
 
             <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-                <h1 className="mb-6 text-xl font-bold text-gray-900">
-                    作業履歴
-                    <span className="ml-2 text-sm font-normal text-gray-500">（{totalLogs}件）</span>
-                </h1>
+                {/* ページヘッダー */}
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                    <h1 className="text-xl font-bold text-gray-900">
+                        作業履歴
+                        <span className="ml-2 text-sm font-normal text-gray-500">（{totalLogs}件）</span>
+                    </h1>
+                    <ExportButton />
+                </div>
 
                 <WorkHistory grouped={grouped} categories={categories} />
             </div>

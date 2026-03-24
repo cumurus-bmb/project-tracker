@@ -254,7 +254,7 @@ export default function Welcome() {
                                 </div>
                                 <p className="mb-6 text-gray-500">高度な分析機能</p>
                                 <div className="mb-8">
-                                    <span className="text-4xl font-bold text-gray-900">¥50</span>
+                                    <span className="text-4xl font-bold text-gray-900">¥100</span>
                                     <span className="text-gray-500"> / 月</span>
                                 </div>
                                 <ul className="mb-8 space-y-3">

@@ -1,7 +1,8 @@
 import Timer from '@/Components/Timer';
 import WorkLogForm from '@/Components/WorkLogForm';
+import StatCards, { CategoryStats } from '@/Components/StatCards';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { DeleteDialog, EditModal, formatDuration, toDatePart, toHHMM } from '@/Components/WorkHistory';
+import { DeleteDialog, EditModal, formatDuration, toHHMM } from '@/Components/WorkHistory';
 import { Head } from '@inertiajs/react';
 import { Clock, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -9,17 +10,6 @@ import { useState } from 'react';
 /** ISO文字列から「M/D」を取得 */
 function toMD(isoString) {
     return isoString.slice(5, 10).replace('-', '/');
-}
-
-function StatCard({ label, seconds }) {
-    return (
-        <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-md">
-            <p className="mb-1 text-sm font-medium text-gray-500">{label}</p>
-            <p className="text-3xl font-bold text-gray-900">
-                {formatDuration(seconds)}
-            </p>
-        </div>
-    );
 }
 
 function WorkLogItem({ log, onEdit, onDelete }) {
@@ -65,7 +55,7 @@ function WorkLogItem({ log, onEdit, onDelete }) {
     );
 }
 
-export default function Dashboard({ stats, recentLogs, categories }) {
+export default function Dashboard({ stats, categoryStats, recentLogs, categories }) {
     const [activeTab, setActiveTab]       = useState('timer');
     const [editTarget, setEditTarget]     = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -110,14 +100,16 @@ export default function Dashboard({ stats, recentLogs, categories }) {
                     )}
                 </section>
 
-                {/* 統計カード */}
+                {/* 作業時間サマリー */}
                 <section className="mb-8">
                     <h2 className="mb-4 text-lg font-semibold text-gray-900">作業時間サマリー</h2>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <StatCard label="今日" seconds={stats.todaySeconds} />
-                        <StatCard label="今週" seconds={stats.weekSeconds} />
-                        <StatCard label="今月" seconds={stats.monthSeconds} />
-                    </div>
+                    <StatCards stats={stats} />
+                </section>
+
+                {/* 今月のカテゴリ別統計 */}
+                <section className="mb-8">
+                    <h2 className="mb-4 text-lg font-semibold text-gray-900">今月のカテゴリ別</h2>
+                    <CategoryStats categoryStats={categoryStats ?? []} />
                 </section>
 
                 {/* 直近の作業履歴 */}

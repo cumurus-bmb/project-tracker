@@ -132,19 +132,19 @@
   - [x] Inertia の `router.reload()` で自動リフレッシュ
 
 ### 4.2 基本的な統計表示（無料版）
-- [ ] `Components/StatCards.tsx` の作成
-  - [ ] 今日の合計
-  - [ ] 今週の合計（週の開始曜日設定対応）
-  - [ ] 今月の合計
-- [ ] `DashboardController` で統計データを集計して Inertia に渡す
-- [ ] カテゴリ別統計（今月）
-  - [ ] カテゴリごとの作業時間とパーセンテージ
-  - [ ] プログレスバーでの視覚化
+- [x] `Components/StatCards.tsx` の作成
+  - [x] 今日の合計
+  - [x] 今週の合計（週の開始曜日設定対応）
+  - [x] 今月の合計
+- [x] `DashboardController` で統計データを集計して Inertia に渡す
+- [x] カテゴリ別統計（今月）
+  - [x] カテゴリごとの作業時間とパーセンテージ
+  - [x] プログレスバーでの視覚化
 
 ### 4.3 データエクスポート機能
-- [ ] `ExportController@export` の作成（CSV 生成・BOM 付き UTF-8）
-- [ ] エクスポート範囲の選択（全期間・今月・先月・今週・期間指定）
-- [ ] `Components/ExportButton.tsx` の作成
+- [x] `ExportController@export` の作成（CSV 生成・BOM 付き UTF-8）
+- [x] エクスポート範囲の選択（全期間・今月・先月・今週・期間指定）
+- [x] `Components/ExportButton.tsx` の作成
 
 ## フェーズ5: プレミアム機能の実装
 
@@ -165,23 +165,23 @@
   CASHIER_CURRENCY=jpy
   ```
 - [x] **【手動作業】** Stripe ダッシュボードでサブスクリプションプランを作成し、Price ID を取得
-- [ ] `routes/web.php` の CSRF 除外設定（`stripe/webhook`）
+- [x] `bootstrap/app.php` の CSRF 除外設定（`stripe/webhook`）
 
 ### 5.2 料金ページ・Checkout 実装
-- [ ] `SubscriptionController` の作成（pricing / checkout / billingPortal）
-- [ ] `Pages/Pricing.tsx` の作成
-  - [ ] 料金プラン一覧（無料 vs プレミアム）
-  - [ ] Stripe Checkout へのリダイレクトボタン
-- [ ] Stripe Checkout Session の作成（`newSubscription()->checkout()`）
-- [ ] 決済成功・キャンセル後のリダイレクト先設定
-- [ ] Stripe カスタマーポータル（`/billing`）の実装
-- [ ] サイドバーにアップグレード CTA 追加（未加入ユーザー向け）
+- [x] `SubscriptionController` の作成（pricing / checkout / billingPortal）
+- [x] `Pages/Pricing.tsx` の作成
+  - [x] 料金プラン一覧（無料 vs プレミアム）
+  - [x] Stripe Checkout へのリダイレクトボタン
+- [x] Stripe Checkout Session の作成（`newSubscription()->checkout()`）
+- [x] 決済成功・キャンセル後のリダイレクト先設定
+- [x] Stripe カスタマーポータル（`/billing`）の実装
+- [x] サイドバーにアップグレード CTA 追加（未加入ユーザー向け）
 
 ### 5.3 アクセス制御
-- [ ] `HandleInertiaRequests` で `subscription.isSubscribed` を共有 Props に追加
-- [ ] フロントエンドでのアクセス制限（`usePage().props.subscription.isSubscribed`）
-- [ ] バックエンドでのアクセス制限（`$user->subscribed('default')`）
-- [ ] アップグレード促進 UI（プレミアム未加入ユーザー向けオーバーレイ）
+- [x] `HandleInertiaRequests` で `subscription.isSubscribed` を共有 Props に追加
+- [x] フロントエンドでのアクセス制限（`usePage().props.subscription.isSubscribed`）
+- [x] バックエンドでのアクセス制限（`$user->subscribed('default')`）
+- [x] アップグレード促進 UI（プレミアム未加入ユーザー向けオーバーレイ）
 
 ### 5.4 高度な分析機能：期間切り替え UI（プレミアム）
 - [ ] `ReportController@index` の作成
