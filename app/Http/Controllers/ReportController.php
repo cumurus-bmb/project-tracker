@@ -34,6 +34,10 @@ class ReportController extends Controller
         $dailyAverage = $tab !== 'daily' ? (int) round($currentSeconds / $days) : null;
 
         $categoryStats = $this->categoryBreakdown($user, $currentStart, $currentEnd);
+        $barChartData  = $this->barChartData($user, $currentStart, $currentEnd, $tab, $timezone);
+        $heatmapData   = in_array($tab, ['monthly', 'yearly'])
+            ? $this->heatmapData($user, $currentStart, $currentEnd, $timezone)
+            : [];
 
         return Inertia::render('Reports/Index', [
             'tab'         => $tab,
@@ -49,6 +53,8 @@ class ReportController extends Controller
                 'days'            => $days,
             ],
             'categoryStats' => $categoryStats,
+            'barChartData'  => $barChartData,
+            'heatmapData'   => $heatmapData,
         ]);
     }
 
@@ -152,6 +158,88 @@ class ReportController extends Controller
                 $end->copy()->utc(),
             ])
             ->sum('duration_seconds');
+    }
+
+    private function barChartData($user, Carbon $start, Carbon $end, string $tab, string $timezone): array
+    {
+        $logs = $user->workLogs()
+            ->whereBetween('started_at', [$start->copy()->utc(), $end->copy()->utc()])
+            ->get(['started_at', 'duration_seconds']);
+
+        switch ($tab) {
+            case 'daily':
+                $buckets = array_fill(0, 24, 0);
+                foreach ($logs as $log) {
+                    $hour = Carbon::parse($log->started_at)->setTimezone($timezone)->hour;
+                    $buckets[$hour] += $log->duration_seconds;
+                }
+                return array_map(
+                    fn ($h) => ['label' => "{$h}時", 'seconds' => $buckets[$h]],
+                    range(0, 23)
+                );
+
+            case 'weekly':
+                $days = ['月', '火', '水', '木', '金', '土', '日'];
+                $buckets = array_fill(0, 7, 0);
+                foreach ($logs as $log) {
+                    $dow = Carbon::parse($log->started_at)->setTimezone($timezone)->dayOfWeek;
+                    $idx = $dow === 0 ? 6 : $dow - 1;
+                    $buckets[$idx] += $log->duration_seconds;
+                }
+                return array_map(
+                    fn ($i) => ['label' => $days[$i], 'seconds' => $buckets[$i]],
+                    range(0, 6)
+                );
+
+            case 'yearly':
+                $months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                $buckets = array_fill(0, 12, 0);
+                foreach ($logs as $log) {
+                    $month = Carbon::parse($log->started_at)->setTimezone($timezone)->month - 1;
+                    $buckets[$month] += $log->duration_seconds;
+                }
+                return array_map(
+                    fn ($i) => ['label' => $months[$i], 'seconds' => $buckets[$i]],
+                    range(0, 11)
+                );
+
+            default: // monthly
+                $daysInMonth = $start->daysInMonth;
+                $buckets = array_fill(0, $daysInMonth + 1, 0);
+                foreach ($logs as $log) {
+                    $day = Carbon::parse($log->started_at)->setTimezone($timezone)->day;
+                    if ($day >= 1 && $day <= $daysInMonth) {
+                        $buckets[$day] += $log->duration_seconds;
+                    }
+                }
+                return array_map(
+                    fn ($d) => ['label' => (string) $d, 'seconds' => $buckets[$d]],
+                    range(1, $daysInMonth)
+                );
+        }
+    }
+
+    private function heatmapData($user, Carbon $start, Carbon $end, string $timezone): array
+    {
+        $logs = $user->workLogs()
+            ->whereBetween('started_at', [$start->copy()->utc(), $end->copy()->utc()])
+            ->get(['started_at', 'duration_seconds']);
+
+        $map = [];
+        foreach ($logs as $log) {
+            $date = Carbon::parse($log->started_at)->setTimezone($timezone)->format('Y-m-d');
+            $map[$date] = ($map[$date] ?? 0) + $log->duration_seconds;
+        }
+
+        $result  = [];
+        $current = $start->copy()->startOfDay();
+        $endDate = $end->copy()->startOfDay();
+        while ($current->lte($endDate)) {
+            $date     = $current->format('Y-m-d');
+            $result[] = ['date' => $date, 'seconds' => $map[$date] ?? 0];
+            $current->addDay();
+        }
+        return $result;
     }
 
     private function categoryBreakdown($user, Carbon $start, Carbon $end): array
