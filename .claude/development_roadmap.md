@@ -213,9 +213,9 @@
 ## フェーズ6: 本番デプロイ（ConoHa WING）
 
 ### 6.1 デプロイ準備
-- [ ] `npm run build` でフロントエンドビルド（ローカル PC で実行）
-- [ ] `public/build/` を Git に含める
-- [ ] 本番用 `.env` の作成（`APP_DEBUG=false`, `APP_ENV=production`）
+- [x] `npm run build` でフロントエンドビルド（ローカル PC で実行）
+- [x] `public/build/` を Git に含める
+- [x] 本番用 `.env` の作成（`APP_DEBUG=false`, `APP_ENV=production`）
 
 ### 6.2 ConoHa WING へのアップロード
 - [ ] Laravel 本体をホームディレクトリ（`~/`）にアップロード
