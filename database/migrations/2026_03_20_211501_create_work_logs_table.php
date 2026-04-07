@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->timestamp('started_at');
-            $table->timestamp('ended_at');
+            $table->dateTime('started_at');
+            $table->dateTime('ended_at');
             $table->unsignedInteger('duration_seconds');
             $table->text('memo')->nullable();
             $table->timestamps();

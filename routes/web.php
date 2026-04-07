@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified', 'subscribed'])->group(function () {
 });
 
 Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('pricing');
+Route::get('/legal', fn () => inertia('Legal'))->name('legal');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

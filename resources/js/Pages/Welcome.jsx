@@ -286,6 +286,11 @@ export default function Welcome() {
                         <p className="text-sm text-gray-500">
                             © {new Date().getFullYear()} Project Tracker. All rights reserved.
                         </p>
+                        <div className="mt-2">
+                            <Link href={route('legal')} className="text-sm text-gray-500 hover:text-gray-700">
+                                特定商取引法に基づく表記
+                            </Link>
+                        </div>
                     </div>
                 </footer>
             </div>
