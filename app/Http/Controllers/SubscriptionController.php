@@ -13,7 +13,7 @@ class SubscriptionController extends Controller
     public function pricing(): Response
     {
         return Inertia::render('Pricing', [
-            'monthlyPriceId' => env('STRIPE_PRICE_MONTHLY'),
+            'monthlyPriceId' => config('services.stripe.price_monthly'),
         ]);
     }
 
